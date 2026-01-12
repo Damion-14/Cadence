@@ -15,6 +15,7 @@ import (
 	"github.com/damion-14/cadence/backend/internal/handlers"
 	"github.com/damion-14/cadence/backend/internal/middleware"
 	"github.com/damion-14/cadence/backend/internal/router"
+	"github.com/damion-14/cadence/backend/internal/services"
 )
 
 func main() {
@@ -45,12 +46,18 @@ func run() error {
 
 	cacheClient := cache.NewCache(redisClient)
 
+	workoutService := services.NewWorkoutService(db, cacheClient)
+	statsService := services.NewStatsService(db, cacheClient)
+
 	deps := &router.Dependencies{
-		DB:          db,
-		Redis:       redisClient,
-		Cache:       cacheClient,
-		Config:      cfg,
-		AuthHandler: handlers.NewAuthHandler(db, cfg.JWT),
+		DB:              db,
+		Redis:           redisClient,
+		Cache:           cacheClient,
+		Config:          cfg,
+		AuthHandler:     handlers.NewAuthHandler(db, cfg.JWT),
+		WorkoutHandler:  handlers.NewWorkoutHandler(workoutService),
+		ExerciseHandler: handlers.NewExerciseHandler(workoutService),
+		StatsHandler:    handlers.NewStatsHandler(statsService),
 	}
 
 	mux := router.NewRouter(deps)
